@@ -175,11 +175,22 @@ body {
 </div>
 
 <script>
+
 const params = new URLSearchParams(window.location.search);
 
+// Retrieve property information from URL
 const pid = params.get("pid") || "Not supplied";
+const address = params.get("address") || "Awaiting property data";
+const cadType = params.get("cadType") || "Awaiting property data";
 
+// Display property information
 document.getElementById("pid").textContent = pid;
+document.getElementById("address").textContent = address;
+document.getElementById("cadType").textContent = cadType;
+
+// Display current report date
+console.log("Property report loaded:", pid);
+
 </script>
 
 </body>
