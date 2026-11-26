@@ -4,23 +4,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Hobart Property Intelligence Report</title>
 
-<link rel="stylesheet"
-href="https://js.arcgis.com/4.32/esri/themes/light/main.css">
-
+<link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css">
 <script src="https://js.arcgis.com/4.32/"></script>
 
 <style>
 * { box-sizing: border-box; }
 
+:root {
+    --blue: #155B78;
+    --dark-blue: #10465F;
+    --green: #4B876B;
+    --light-blue: #EDF4F7;
+    --border: #DCE6E9;
+    --text: #263943;
+    --muted: #71818A;
+}
+
 body {
     margin: 0;
     padding: 30px 15px;
-    background: #F1EFF4;
+    background: #EEF2F4;
     font-family: Arial, sans-serif;
-    color: #292333;
+    color: var(--text);
 }
 
 .report {
@@ -33,38 +40,63 @@ body {
 }
 
 .header {
-    background: #493568;
+    background: linear-gradient(120deg, var(--dark-blue), var(--blue));
     color: white;
-    padding: 28px;
+    padding: 25px 28px;
     border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
 }
 
 .header h1 {
     margin: 0 0 8px;
-    font-size: 25px;
+    font-size: 24px;
 }
 
 .header p {
     margin: 0;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 1px;
+}
+
+.header-logo {
+    background: white;
+    padding: 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.header-logo img {
+    display: block;
+    width: 125px;
+    max-height: 65px;
+    object-fit: contain;
+}
+
+/* Repeating print logo */
+.print-page-logo {
+    display: none;
 }
 
 .section {
     margin-top: 28px;
     padding: 20px;
-    border: 1px solid #E5E0EA;
+    border: 1px solid var(--border);
     border-radius: 8px;
 }
 
 .section h2 {
     margin: 0 0 15px;
     font-size: 15px;
-    color: #493568;
+    color: var(--blue);
+    border-bottom: 2px solid var(--light-blue);
+    padding-bottom: 10px;
 }
 
 .result {
-    background: #F5F2F8;
+    background: var(--light-blue);
     padding: 14px;
     border-radius: 6px;
     margin-top: 8px;
@@ -73,13 +105,15 @@ body {
 
 .label {
     font-size: 11px;
-    color: #77717F;
+    color: var(--muted);
     margin-top: 12px;
+    letter-spacing: .4px;
 }
 
 .value {
     font-weight: bold;
     margin-top: 4px;
+    color: var(--dark-blue);
 }
 
 .button {
@@ -88,10 +122,19 @@ body {
     padding: 14px 25px;
     border: none;
     border-radius: 6px;
-    background: #493568;
+    background: var(--blue);
     color: white;
     font-size: 14px;
     cursor: pointer;
+}
+
+.button:hover {
+    background: var(--dark-blue);
+}
+
+.button:disabled {
+    opacity: .65;
+    cursor: wait;
 }
 
 #map {
@@ -101,7 +144,6 @@ body {
     overflow: hidden;
 }
 
-/* Print screenshot - hidden on normal page */
 #printMapImage {
     display: none;
     width: 100%;
@@ -136,25 +178,35 @@ body {
     grid-column: 1 / -1;
     font-size: 12px;
     font-weight: bold;
-    color: #493568;
+    color: var(--blue);
     margin-top: 5px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
 }
 
 .footer {
     margin-top: 35px;
     padding-top: 15px;
-    border-top: 1px solid #E5E0EA;
-    color: #77717F;
+    border-top: 2px solid var(--border);
+    color: var(--muted);
     font-size: 10px;
     line-height: 1.6;
 }
 
-/* PRINT STYLES */
-@media print {
+.landslide-record {
+    background: white;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--green);
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 6px;
+}
 
+/* PRINT */
+@media print {
     @page {
         size: A4;
-        margin: 12mm;
+        margin: 22mm 12mm 12mm 12mm;
     }
 
     body {
@@ -169,19 +221,34 @@ body {
         max-width: none;
         padding: 10px;
         margin: 0;
+        border-radius: 0;
     }
 
     .button,
     .esri-ui,
-    #map {
+    #map,
+    .header-logo {
         display: none !important;
     }
 
-    /* Show captured map image instead of live ArcGIS map */
     #printMapImage {
         display: block !important;
         width: 100%;
         height: 430px;
+        object-fit: contain;
+    }
+
+    .print-page-logo {
+        display: block !important;
+        position: fixed;
+        top: -17mm;
+        right: 0;
+        z-index: 9999;
+    }
+
+    .print-page-logo img {
+        width: 105px;
+        max-height: 42px;
         object-fit: contain;
     }
 
@@ -190,10 +257,7 @@ body {
         break-inside: avoid;
     }
 
-    .section {
-        break-inside: avoid;
-    }
-
+    .section,
     .header {
         break-inside: avoid;
     }
@@ -208,11 +272,24 @@ body {
 
 <body>
 
+<!-- REPEATING PRINT LOGO -->
+<div class="print-page-logo">
+    <img src="City%20of%20Hobart%20logo%20-%20Colour.png"
+         alt="City of Hobart">
+</div>
+
 <div class="report">
 
     <div class="header">
-        <h1>PROPERTY INTELLIGENCE REPORT</h1>
-        <p>CITY OF HOBART | PROPERTY ASSESSMENT</p>
+        <div>
+            <h1>PROPERTY INTELLIGENCE REPORT</h1>
+            <p>CITY OF HOBART | PROPERTY ASSESSMENT</p>
+        </div>
+
+        <div class="header-logo">
+            <img src="City%20of%20Hobart%20logo%20-%20Colour.png"
+                 alt="City of Hobart logo">
+        </div>
     </div>
 
     <div class="section">
@@ -245,65 +322,52 @@ body {
     <div class="section">
         <h2>04 — PROPERTY LOCATION AND HAZARD MAP</h2>
 
-        <!-- Live map -->
         <div id="map"></div>
 
-        <!-- Static map image used for printing -->
         <img id="printMapImage" alt="Property hazard map">
 
-        <!-- MAP LEGEND -->
         <div class="map-legend" id="legend">
-
             <div class="legend-heading">MAP LEGEND</div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:white;border:2px solid #493568;"></span>
+                <span class="swatch" style="background:white;border:2px solid #155B78;"></span>
                 Selected property
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:transparent;border:1px solid #858585;"></span>
+                <span class="swatch" style="background:transparent;border:1px solid #858585;"></span>
                 Surrounding cadastre
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:#C84238;"></span>
+                <span class="swatch" style="background:#C84238;"></span>
                 High hazard
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:#E07A38;"></span>
+                <span class="swatch" style="background:#E07A38;"></span>
                 Medium-Active hazard
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:#E2B048;"></span>
+                <span class="swatch" style="background:#E2B048;"></span>
                 Medium hazard
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:#7DA869;"></span>
+                <span class="swatch" style="background:#7DA869;"></span>
                 Low hazard
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:rgba(255,127,127,.8);border:1px solid #A80000;"></span>
+                <span class="swatch" style="background:rgba(255,127,127,.8);border:1px solid #A80000;"></span>
                 Recent / Active landslide
             </div>
 
             <div class="legend-item">
-                <span class="swatch"
-                style="background:rgba(117,179,255,.8);border:1px solid #004DA8;"></span>
+                <span class="swatch" style="background:rgba(117,179,255,.8);border:1px solid #004DA8;"></span>
                 Activity Unknown landslide
             </div>
-
         </div>
     </div>
 
@@ -313,7 +377,7 @@ body {
 
     <div class="footer">
         CITY OF HOBART | PROPERTY INTELLIGENCE
-        <br>
+        <br><br>
         This report is intended as an informational property assessment.
         Refer to original datasets and relevant authorities for verification.
     </div>
@@ -321,7 +385,6 @@ body {
 </div>
 
 <script>
-
 const params = new URLSearchParams(window.location.search);
 
 const pid = params.get("pid") || "";
@@ -332,19 +395,13 @@ document.getElementById("pid").textContent = pid || "Not supplied";
 document.getElementById("address").textContent = address || "Not supplied";
 document.getElementById("cadType").textContent = cadType || "Not specified";
 
-
 // ============================================
 // HISTORICAL LANDSLIDES
 // ============================================
 
-const landslideIDs =
-    (params.get("landslideIDs") || "").split("|");
-
-const activityStates =
-    (params.get("activityStates") || "").split("|");
-
-const landslideElement =
-    document.getElementById("landslides");
+const landslideIDs = (params.get("landslideIDs") || "").split("|");
+const activityStates = (params.get("activityStates") || "").split("|");
+const landslideElement = document.getElementById("landslides");
 
 function escapeHTML(value) {
     return String(value).replace(/[&<>"']/g, char => ({
@@ -360,25 +417,16 @@ let found = false;
 landslideElement.innerHTML = "";
 
 for (let i = 0; i < landslideIDs.length; i++) {
-
     if (!landslideIDs[i]) continue;
 
     found = true;
 
     landslideElement.innerHTML += `
-        <div style="
-            background:white;
-            border:1px solid #E5E0EA;
-            border-left:4px solid #8261A8;
-            padding:12px;
-            margin-top:10px;
-            border-radius:6px;
-        ">
-            <strong style="color:#493568;">
+        <div class="landslide-record">
+            <strong style="color:#155B78;">
                 Landslide ID: ${escapeHTML(landslideIDs[i])}
             </strong>
-
-            <div style="margin-top:6px;font-size:12px;color:#77717F;">
+            <div style="margin-top:6px;font-size:12px;color:#71818A;">
                 Activity State:
                 ${escapeHTML(activityStates[i] || "Not specified")}
             </div>
@@ -387,10 +435,8 @@ for (let i = 0; i < landslideIDs.length; i++) {
 }
 
 if (!found) {
-    landslideElement.textContent =
-        "No historical landslide records found.";
+    landslideElement.textContent = "No historical landslide records found.";
 }
-
 
 // ============================================
 // MAP
@@ -402,13 +448,7 @@ require([
     "esri/layers/FeatureLayer",
     "esri/Graphic",
     "esri/core/reactiveUtils"
-], function(
-    Map,
-    MapView,
-    FeatureLayer,
-    Graphic,
-    reactiveUtils
-) {
+], function(Map, MapView, FeatureLayer, Graphic, reactiveUtils) {
 
     const cadastreURL =
         "https://services1.arcgis.com/NHqdsnvwfSTg42I8/arcgis/rest/services/LIST_Cadastre_with_addresses/FeatureServer/0";
@@ -421,11 +461,6 @@ require([
 
     const localitiesURL =
         "https://services.thelist.tas.gov.au/arcgis/rest/services/Public/CadastreAndAdministrative/MapServer/7";
-
-
-    // ========================================
-    // LAYERS
-    // ========================================
 
     const localityLayer = new FeatureLayer({
         url: localitiesURL,
@@ -456,11 +491,6 @@ require([
         outFields: ["*"]
     });
 
-
-    // ========================================
-    // MAP
-    // ========================================
-
     const map = new Map({
         basemap: "gray-vector",
         layers: [
@@ -476,30 +506,25 @@ require([
         map: map,
         center: [147.33, -42.88],
         zoom: 15,
-
         constraints: {
             minZoom: 15,
             maxZoom: 15,
             snapToZoom: false
         },
-
         navigation: {
             mouseWheelZoomEnabled: false,
             browserTouchPanEnabled: false
         },
-
         ui: {
             components: []
         }
     });
 
-
     // ========================================
-    // SELECTED PROPERTY
+    // PROPERTY SEARCH
     // ========================================
 
     async function findProperty() {
-
         if (!address && !pid) {
             console.warn("No property address supplied.");
             return;
@@ -508,22 +533,15 @@ require([
         await cadastreLayer.load();
 
         const query = cadastreLayer.createQuery();
-
         query.returnGeometry = true;
         query.outFields = ["*"];
         query.num = 10;
 
         if (pid) {
-
-            query.where =
-                "PID = '" + pid.replace(/'/g, "''") + "'";
-
+            query.where = "PID = '" + pid.replace(/'/g, "''") + "'";
         } else {
-
-            query.where =
-                "PROPERTY_ADDRESS = '" +
+            query.where = "PROPERTY_ADDRESS = '" +
                 address.replace(/'/g, "''") + "'";
-
         }
 
         const results = await cadastreLayer.queryFeatures(query);
@@ -537,13 +555,11 @@ require([
 
         const propertyGraphic = new Graphic({
             geometry: feature.geometry,
-
             symbol: {
                 type: "simple-fill",
                 color: [0, 0, 0, 0],
-
                 outline: {
-                    color: [73, 53, 104, 255],
+                    color: [21, 91, 120, 255],
                     width: 3
                 }
             }
@@ -561,87 +577,64 @@ require([
                 right: 55
             }
         });
-
     }
 
-
     // ========================================
-    // INITIALISE
+    // INITIALISE MAP
     // ========================================
 
-    view.when(async function() {
+    const mapReady = (async function() {
+        await view.when();
 
-        try {
+        await Promise.all([
+            localityLayer.load(),
+            hazardLayer.load(),
+            historicalLayer.load(),
+            cadastreLayer.load()
+        ]);
 
-            await Promise.all([
-                localityLayer.load(),
-                hazardLayer.load(),
-                historicalLayer.load(),
-                cadastreLayer.load()
-            ]);
+        await findProperty();
 
-            await findProperty();
+        view.popupEnabled = false;
 
-            view.popupEnabled = false;
+        view.on("mouse-wheel", event => event.stopPropagation());
+        view.on("drag", event => event.stopPropagation());
+        view.on("double-click", event => event.stopPropagation());
+        view.on("key-down", event => event.stopPropagation());
 
-            // Disable map navigation
-            view.on("mouse-wheel", event => event.stopPropagation());
-            view.on("drag", event => event.stopPropagation());
-            view.on("double-click", event => event.stopPropagation());
-            view.on("key-down", event => event.stopPropagation());
+        await reactiveUtils.whenOnce(() => !view.updating);
 
-            // Make sure the final map is rendered
-            await reactiveUtils.whenOnce(() => !view.updating);
-
-            console.log("Property map successfully loaded.");
-
-        } catch (error) {
-
-            console.error("Map initialisation error:", error);
-
-        }
-
+        console.log("Property map successfully loaded.");
+    })().catch(error => {
+        console.error("Map initialisation error:", error);
+        throw error;
     });
-
 
     // ========================================
     // PRINT REPORT
     // ========================================
 
     window.printReport = async function() {
-
-        const printButton =
-            document.querySelector(".button");
-
-        const printImage =
-            document.getElementById("printMapImage");
+        const printButton = document.querySelector(".button");
+        const printImage = document.getElementById("printMapImage");
 
         try {
-
             printButton.textContent = "Preparing map...";
-
             printButton.disabled = true;
 
-            // Wait for map initialisation
-            await view.when();
+            await mapReady;
 
-            // Wait for all map drawing to finish
             await reactiveUtils.whenOnce(() => !view.updating);
 
-            // Allow browser rendering to complete
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Capture the complete ArcGIS map
             const screenshot = await view.takeScreenshot({
                 format: "png"
             });
 
-            // Put captured map into print image
             printImage.src = screenshot.dataUrl;
 
-            // Wait for image to load
             await new Promise((resolve, reject) => {
-
                 if (printImage.complete && printImage.naturalWidth > 0) {
                     resolve();
                     return;
@@ -649,20 +642,16 @@ require([
 
                 printImage.onload = resolve;
                 printImage.onerror = reject;
-
             });
 
-            // Allow image to render before opening print preview
             await new Promise(resolve => setTimeout(resolve, 300));
 
             printButton.textContent = "PRINT / SAVE AS PDF";
-
             printButton.disabled = false;
 
             window.print();
 
         } catch (error) {
-
             console.error("Print error:", error);
 
             printButton.textContent = "PRINT / SAVE AS PDF";
@@ -672,21 +661,14 @@ require([
                 "The map could not be captured for printing. " +
                 "Please check the browser console for details."
             );
-
         }
-
     };
 
-
-    // Refresh map after returning from print preview
     window.addEventListener("afterprint", function() {
-
         view.resize();
-
     });
 
 });
-
 </script>
 
 </body>
