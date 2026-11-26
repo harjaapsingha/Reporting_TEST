@@ -7,7 +7,13 @@
 
 <title>Hobart Property Intelligence Report</title>
 
+<link rel="stylesheet"
+href="https://js.arcgis.com/4.32/esri/themes/light/main.css">
+
+<script src="https://js.arcgis.com/4.32/"></script>
+
 <style>
+
 * {
     box-sizing: border-box;
 }
@@ -79,6 +85,20 @@ body {
     margin-top: 4px;
 }
 
+#propertyMap {
+    width: 100%;
+    height: 420px;
+    border-radius: 7px;
+    overflow: hidden;
+    background: #E9EDF2;
+}
+
+.map-status {
+    font-size: 11px;
+    color: #77717F;
+    margin-top: 8px;
+}
+
 .button {
     display: block;
     margin: 25px auto;
@@ -91,6 +111,11 @@ body {
     cursor: pointer;
 }
 
+.button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .footer {
     margin-top: 35px;
     padding-top: 15px;
@@ -101,21 +126,47 @@ body {
 }
 
 @media print {
+
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
     body {
         background: white;
         padding: 0;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 
     .report {
         box-shadow: none;
         max-width: none;
-        padding: 20px;
+        padding: 10px;
+        border-radius: 0;
     }
 
     .button {
         display: none;
     }
+
+    #propertyMap {
+        height: 420px;
+        break-inside: avoid;
+    }
+
+    .section {
+        break-inside: avoid;
+    }
+
+    .header,
+    .result {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
 }
+
 </style>
 </head>
 
@@ -123,12 +174,21 @@ body {
 
 <div class="report">
 
+    <!-- REPORT HEADER -->
+
     <div class="header">
+
         <h1>PROPERTY INTELLIGENCE REPORT</h1>
+
         <p>CITY OF HOBART | PROPERTY ASSESSMENT</p>
+
     </div>
 
+
+    <!-- 01 PROPERTY INFORMATION -->
+
     <div class="section">
+
         <h2>01 — PROPERTY INFORMATION</h2>
 
         <div class="label">PROPERTY PID</div>
@@ -139,37 +199,69 @@ body {
 
         <div class="label">CADASTRAL TYPE</div>
         <div class="value" id="cadType">Awaiting property data</div>
+
     </div>
 
+
+    <!-- 02 COASTAL EROSION -->
+
     <div class="section">
+
         <h2>02 — COASTAL EROSION</h2>
+
         <div class="result" id="erosion">
             Awaiting hazard assessment.
         </div>
+
     </div>
 
+
+    <!-- 03 HISTORICAL LANDSLIDES -->
+
     <div class="section">
+
         <h2>03 — HISTORICAL LANDSLIDES</h2>
+
         <div class="result" id="landslides">
             Awaiting landslide assessment.
         </div>
+
     </div>
+
+
+    <!-- 04 PROPERTY LOCATION -->
 
     <div class="section">
+
         <h2>04 — PROPERTY LOCATION</h2>
-        <div class="result">
-            Property map will be added in the next stage.
+
+        <div id="propertyMap"></div>
+
+        <div class="map-status" id="mapStatus">
+            Loading property map...
         </div>
+
     </div>
 
-    <button class="button" onclick="window.print()">
+
+    <!-- PRINT BUTTON -->
+
+    <button class="button" id="printButton" onclick="printReport()">
+
         PRINT / SAVE AS PDF
+
     </button>
 
+
+    <!-- FOOTER -->
+
     <div class="footer">
+
         CITY OF HOBART | PROPERTY INTELLIGENCE<br>
+
         This report is intended as an informational property assessment.
         Refer to original datasets and relevant authorities for verification.
+
     </div>
 
 </div>
@@ -177,32 +269,48 @@ body {
 
 <script>
 
+// ============================================
+// 1. RETRIEVE URL PARAMETERS
+// ============================================
+
 const params = new URLSearchParams(window.location.search);
 
-// ============================================
-// 1. PROPERTY INFORMATION
-// ============================================
-
 const pid = params.get("pid") || "Not supplied";
+
 const address = params.get("address") || "Awaiting property data";
+
 const cadType = params.get("cadType") || "Not specified";
 
+
+// ============================================
+// 2. DISPLAY PROPERTY INFORMATION
+// ============================================
+
 document.getElementById("pid").textContent = pid;
+
 document.getElementById("address").textContent = address;
+
 document.getElementById("cadType").textContent = cadType;
 
 
 // ============================================
-// 2. HISTORICAL LANDSLIDES
+// 3. HISTORICAL LANDSLIDES
 // ============================================
 
-const landslideIDs = (params.get("landslideIDs") || "").split("|");
-const activityStates = (params.get("activityStates") || "").split("|");
+const landslideIDs =
+    (params.get("landslideIDs") || "").split("|");
 
-const landslideElement = document.getElementById("landslides");
+const activityStates =
+    (params.get("activityStates") || "").split("|");
+
+const landslideElement =
+    document.getElementById("landslides");
+
 
 function escapeHTML(value) {
+
     return String(value).replace(/[&<>"']/g, function(char) {
+
         return {
             "&": "&amp;",
             "<": "&lt;",
@@ -210,8 +318,11 @@ function escapeHTML(value) {
             '"': "&quot;",
             "'": "&#39;"
         }[char];
+
     });
+
 }
+
 
 if (!params.get("landslideIDs")) {
 
@@ -231,7 +342,10 @@ if (!params.get("landslideIDs")) {
         recordCount++;
 
         const id = escapeHTML(landslideIDs[i]);
-        const activity = escapeHTML(activityStates[i] || "Not specified");
+
+        const activity = escapeHTML(
+            activityStates[i] || "Not specified"
+        );
 
         const record = document.createElement("div");
 
@@ -245,6 +359,7 @@ if (!params.get("landslideIDs")) {
         `;
 
         record.innerHTML = `
+
             <strong style="color:#493568;">
                 Landslide ID: ${id}
             </strong>
@@ -254,29 +369,428 @@ if (!params.get("landslideIDs")) {
                 font-size:12px;
                 color:#77717F;
             ">
+
                 Activity State: ${activity}
+
             </div>
+
         `;
 
         landslideElement.appendChild(record);
+
     }
 
     if (recordCount === 0) {
+
         landslideElement.textContent =
             "No historical landslide records found.";
+
     }
+
 }
 
 
 // ============================================
-// 3. REPORT STATUS
+// 4. ARCGIS MAP
+// ============================================
+
+let mapView = null;
+
+let mapReady = false;
+
+
+require([
+
+    "esri/Map",
+    "esri/views/MapView",
+    "esri/layers/FeatureLayer",
+    "esri/Graphic"
+
+], function(
+
+    Map,
+    MapView,
+    FeatureLayer,
+    Graphic
+
+) {
+
+
+    const mapStatus =
+        document.getElementById("mapStatus");
+
+
+    // ----------------------------------------
+    // BASEMAP
+    // ----------------------------------------
+
+    const map = new Map({
+
+        basemap: "gray-vector"
+
+    });
+
+
+    // ----------------------------------------
+    // LIST CADASTRE
+    // ----------------------------------------
+
+    const cadastreLayer = new FeatureLayer({
+
+        url:
+        "https://services1.arcgis.com/NHqdsnvwfSTg42I8/arcgis/rest/services/LIST_Cadastre_with_addresses/FeatureServer/0",
+
+        title: "LIST Cadastre",
+
+        opacity: 0.27,
+
+        outFields: ["*"]
+
+    });
+
+
+    // ----------------------------------------
+    // LANDSLIDE PLANNING MAP 2025
+    // HAZARD BANDS
+    // ----------------------------------------
+
+    const hazardLayer = new FeatureLayer({
+
+        url:
+        "https://data.stategrowth.tas.gov.au/ags/rest/services/MRT/Landslide_Planning_Map_2025_Hazard_Bands/MapServer/2",
+
+        title: "Landslide Planning Map 2025 Hazard Bands",
+
+        outFields: ["*"]
+
+    });
+
+
+    // ----------------------------------------
+    // HISTORICAL LANDSLIDE POLYGONS
+    // ----------------------------------------
+
+    const historicalLayer = new FeatureLayer({
+
+        url:
+        "https://data.stategrowth.tas.gov.au/ags/rest/services/MRT/GeohazardsWFS/MapServer/13",
+
+        title: "History - Landslide Polygon",
+
+        outFields: [
+            "ID_LANDSLIDE",
+            "ACTIVITY_STATE"
+        ]
+
+    });
+
+
+    // ----------------------------------------
+    // ADD MAP LAYERS
+    // ----------------------------------------
+
+    map.addMany([
+
+        cadastreLayer,
+
+        hazardLayer,
+
+        historicalLayer
+
+    ]);
+
+
+    // ----------------------------------------
+    // MAP VIEW
+    // ----------------------------------------
+
+    const view = new MapView({
+
+        container: "propertyMap",
+
+        map: map,
+
+        center: [147.33, -42.88],
+
+        zoom: 15,
+
+        constraints: {
+
+            snapToZoom: false
+
+        },
+
+        ui: {
+
+            components: ["attribution"]
+
+        }
+
+    });
+
+    mapView = view;
+
+
+    // ========================================
+    // 5. FIND SELECTED PROPERTY USING PID
+    // ========================================
+
+    async function loadProperty() {
+
+        try {
+
+            if (
+                !pid ||
+                pid === "Not supplied" ||
+                !/^\d+$/.test(pid.trim())
+            ) {
+
+                mapStatus.textContent =
+                    "A valid property identifier was not supplied.";
+
+                return;
+
+            }
+
+
+            // Load cadastre service
+
+            await cadastreLayer.load();
+
+
+            // Query selected property
+
+            const query = cadastreLayer.createQuery();
+
+            query.where = "PID = " + Number(pid);
+
+            query.returnGeometry = true;
+
+            query.outFields = [
+
+                "PID",
+
+                "PROPERTY_ADDRESS",
+
+                "CAD_TYPE1"
+
+            ];
+
+            query.num = 1;
+
+
+            const result =
+                await cadastreLayer.queryFeatures(query);
+
+
+            if (!result.features.length) {
+
+                mapStatus.textContent =
+                    "Selected property could not be located.";
+
+                return;
+
+            }
+
+
+            const property = result.features[0];
+
+            const propertyGeometry = property.geometry;
+
+
+            // =================================
+            // 6. HIGHLIGHT SELECTED PROPERTY
+            // =================================
+
+            const highlight = new Graphic({
+
+                geometry: propertyGeometry,
+
+                symbol: {
+
+                    type: "simple-fill",
+
+                    color: [73, 53, 104, 45],
+
+                    outline: {
+
+                        color: [73, 53, 104, 255],
+
+                        width: 3
+
+                    }
+
+                }
+
+            });
+
+            view.graphics.add(highlight);
+
+
+            // =================================
+            // 7. ZOOM TO PROPERTY AND SURROUNDINGS
+            // =================================
+
+            await view.goTo({
+
+                target: propertyGeometry.extent.expand(4)
+
+            });
+
+
+            // =================================
+            // 8. LOAD OVERLAY LAYERS
+            // =================================
+
+            await Promise.all([
+
+                hazardLayer.load(),
+
+                historicalLayer.load()
+
+            ]);
+
+
+            await view.when();
+
+
+            // Wait until map layers finish drawing
+
+            await view.whenLayerView(cadastreLayer);
+
+            await view.whenLayerView(hazardLayer);
+
+            await view.whenLayerView(historicalLayer);
+
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 1000)
+            );
+
+
+            mapReady = true;
+
+            mapStatus.textContent =
+                "Property location: " + pid;
+
+
+            console.log("Property mapped:", pid);
+
+        }
+
+        catch (error) {
+
+            console.error("Map loading error:", error);
+
+            mapStatus.textContent =
+                "Unable to load property map. Check layer availability and access permissions.";
+
+        }
+
+    }
+
+
+    // ========================================
+    // 9. INITIALISE MAP
+    // ========================================
+
+    view.when(function() {
+
+        loadProperty();
+
+    });
+
+
+});
+
+
+// ============================================
+// 10. PRINT REPORT
+// ============================================
+
+async function printReport() {
+
+    const button =
+        document.getElementById("printButton");
+
+    const mapStatus =
+        document.getElementById("mapStatus");
+
+    button.disabled = true;
+
+    button.textContent = "PREPARING REPORT...";
+
+    try {
+
+        if (mapView) {
+
+            await mapView.when();
+
+            if (!mapReady) {
+
+                mapStatus.textContent =
+                    "Waiting for map to finish loading...";
+
+                // Wait for map readiness, with a maximum wait
+
+                let attempts = 0;
+
+                while (!mapReady && attempts < 30) {
+
+                    await new Promise(resolve =>
+                        setTimeout(resolve, 500)
+                    );
+
+                    attempts++;
+
+                }
+
+            }
+
+            // Allow map to resize and render
+
+            await mapView.resize();
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 1500)
+            );
+
+        }
+
+        window.print();
+
+    }
+
+    catch (error) {
+
+        console.error("Print preparation error:", error);
+
+        window.print();
+
+    }
+
+    finally {
+
+        button.disabled = false;
+
+        button.textContent = "PRINT / SAVE AS PDF";
+
+    }
+
+}
+
+
+// ============================================
+// 11. REPORT STATUS
 // ============================================
 
 console.log("Property report loaded:", pid);
+
+console.log("Property address:", address);
+
 console.log("Landslide records:", landslideIDs);
 
 </script>
-
 
 </body>
 </html>
