@@ -101,6 +101,15 @@ body {
     overflow: hidden;
 }
 
+/* Print screenshot - hidden on normal page */
+#printMapImage {
+    display: none;
+    width: 100%;
+    height: 430px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
 .map-legend {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -140,7 +149,9 @@ body {
     line-height: 1.6;
 }
 
+/* PRINT STYLES */
 @media print {
+
     @page {
         size: A4;
         margin: 12mm;
@@ -157,20 +168,39 @@ body {
         box-shadow: none;
         max-width: none;
         padding: 10px;
+        margin: 0;
     }
 
     .button,
-    .esri-ui {
+    .esri-ui,
+    #map {
         display: none !important;
     }
 
-    #map {
+    /* Show captured map image instead of live ArcGIS map */
+    #printMapImage {
+        display: block !important;
+        width: 100%;
         height: 430px;
+        object-fit: contain;
+    }
+
+    .map-legend {
+        display: grid !important;
         break-inside: avoid;
     }
 
     .section {
         break-inside: avoid;
+    }
+
+    .header {
+        break-inside: avoid;
+    }
+
+    img {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
 </style>
@@ -215,13 +245,16 @@ body {
     <div class="section">
         <h2>04 — PROPERTY LOCATION AND HAZARD MAP</h2>
 
+        <!-- Live map -->
         <div id="map"></div>
 
+        <!-- Static map image used for printing -->
+        <img id="printMapImage" alt="Property hazard map">
+
+        <!-- MAP LEGEND -->
         <div class="map-legend" id="legend">
 
-            <div class="legend-heading">
-                MAP LEGEND
-            </div>
+            <div class="legend-heading">MAP LEGEND</div>
 
             <div class="legend-item">
                 <span class="swatch"
@@ -280,6 +313,9 @@ body {
 
     <div class="footer">
         CITY OF HOBART | PROPERTY INTELLIGENCE
+        <br>
+        This report is intended as an informational property assessment.
+        Refer to original datasets and relevant authorities for verification.
     </div>
 
 </div>
@@ -301,10 +337,14 @@ document.getElementById("cadType").textContent = cadType || "Not specified";
 // HISTORICAL LANDSLIDES
 // ============================================
 
-const landslideIDs = (params.get("landslideIDs") || "").split("|");
-const activityStates = (params.get("activityStates") || "").split("|");
+const landslideIDs =
+    (params.get("landslideIDs") || "").split("|");
 
-const landslideElement = document.getElementById("landslides");
+const activityStates =
+    (params.get("activityStates") || "").split("|");
+
+const landslideElement =
+    document.getElementById("landslides");
 
 function escapeHTML(value) {
     return String(value).replace(/[&<>"']/g, char => ({
@@ -339,7 +379,8 @@ for (let i = 0; i < landslideIDs.length; i++) {
             </strong>
 
             <div style="margin-top:6px;font-size:12px;color:#77717F;">
-                Activity State: ${escapeHTML(activityStates[i] || "Not specified")}
+                Activity State:
+                ${escapeHTML(activityStates[i] || "Not specified")}
             </div>
         </div>
     `;
@@ -359,14 +400,14 @@ require([
     "esri/Map",
     "esri/views/MapView",
     "esri/layers/FeatureLayer",
-    "esri/geometry/geometryEngine",
-    "esri/Graphic"
+    "esri/Graphic",
+    "esri/core/reactiveUtils"
 ], function(
     Map,
     MapView,
     FeatureLayer,
-    geometryEngine,
-    Graphic
+    Graphic,
+    reactiveUtils
 ) {
 
     const cadastreURL =
@@ -431,25 +472,25 @@ require([
     });
 
     const view = new MapView({
-    container: "map",
-    map: map,
-    center: [147.33, -42.88],
-    zoom: 15,
+        container: "map",
+        map: map,
+        center: [147.33, -42.88],
+        zoom: 15,
 
-    constraints: {
-        minZoom: 15,
-        maxZoom: 15,
-        snapToZoom: false
-    },
+        constraints: {
+            minZoom: 15,
+            maxZoom: 15,
+            snapToZoom: false
+        },
 
-    navigation: {
-        mouseWheelZoomEnabled: false,
-        browserTouchPanEnabled: false
-    },
+        navigation: {
+            mouseWheelZoomEnabled: false,
+            browserTouchPanEnabled: false
+        },
 
-    ui: {
-        components: []
-    }
+        ui: {
+            components: []
+        }
     });
 
 
@@ -457,12 +498,10 @@ require([
     // SELECTED PROPERTY
     // ========================================
 
-    let selectedGraphic = null;
-
     async function findProperty() {
 
         if (!address && !pid) {
-            console.warn("No property address or PID supplied.");
+            console.warn("No property address supplied.");
             return;
         }
 
@@ -475,11 +514,16 @@ require([
         query.num = 10;
 
         if (pid) {
-            query.where = "PID = '" + pid.replace(/'/g, "''") + "'";
+
+            query.where =
+                "PID = '" + pid.replace(/'/g, "''") + "'";
+
         } else {
+
             query.where =
                 "PROPERTY_ADDRESS = '" +
                 address.replace(/'/g, "''") + "'";
+
         }
 
         const results = await cadastreLayer.queryFeatures(query);
@@ -493,9 +537,11 @@ require([
 
         const propertyGraphic = new Graphic({
             geometry: feature.geometry,
+
             symbol: {
                 type: "simple-fill",
                 color: [0, 0, 0, 0],
+
                 outline: {
                     color: [73, 53, 104, 255],
                     width: 3
@@ -503,11 +549,7 @@ require([
             }
         });
 
-        if (selectedGraphic) {
-            view.graphics.remove(selectedGraphic);
-        }
-
-        selectedGraphic = propertyGraphic;
+        view.graphics.removeAll();
         view.graphics.add(propertyGraphic);
 
         await view.goTo({
@@ -527,67 +569,121 @@ require([
     // INITIALISE
     // ========================================
 
-view.when(async function() {
+    view.when(async function() {
 
-    try {
-        await Promise.all([
-            localityLayer.load(),
-            hazardLayer.load(),
-            historicalLayer.load(),
-            cadastreLayer.load()
-        ]);
+        try {
 
-        await findProperty();
+            await Promise.all([
+                localityLayer.load(),
+                hazardLayer.load(),
+                historicalLayer.load(),
+                cadastreLayer.load()
+            ]);
 
-        // Disable map popups
-        view.popupEnabled = false;
+            await findProperty();
 
-        // Disable user navigation
-        view.on("mouse-wheel", function(event) {
-            event.stopPropagation();
-        });
+            view.popupEnabled = false;
 
-        view.on("drag", function(event) {
-            event.stopPropagation();
-        });
+            // Disable map navigation
+            view.on("mouse-wheel", event => event.stopPropagation());
+            view.on("drag", event => event.stopPropagation());
+            view.on("double-click", event => event.stopPropagation());
+            view.on("key-down", event => event.stopPropagation());
 
-        view.on("double-click", function(event) {
-            event.stopPropagation();
-        });
+            // Make sure the final map is rendered
+            await reactiveUtils.whenOnce(() => !view.updating);
 
-        view.on("key-down", function(event) {
-            event.stopPropagation();
-        });
+            console.log("Property map successfully loaded.");
 
-    } catch (error) {
-        console.error("Map initialisation error:", error);
-    }
+        } catch (error) {
+
+            console.error("Map initialisation error:", error);
+
+        }
 
     });
 
 
     // ========================================
-    // PRINT
+    // PRINT REPORT
     // ========================================
 
     window.printReport = async function() {
 
+        const printButton =
+            document.querySelector(".button");
+
+        const printImage =
+            document.getElementById("printMapImage");
+
         try {
 
+            printButton.textContent = "Preparing map...";
+
+            printButton.disabled = true;
+
+            // Wait for map initialisation
             await view.when();
 
-            await view.goTo(view.extent);
+            // Wait for all map drawing to finish
+            await reactiveUtils.whenOnce(() => !view.updating);
 
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Allow browser rendering to complete
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Capture the complete ArcGIS map
+            const screenshot = await view.takeScreenshot({
+                format: "png"
+            });
+
+            // Put captured map into print image
+            printImage.src = screenshot.dataUrl;
+
+            // Wait for image to load
+            await new Promise((resolve, reject) => {
+
+                if (printImage.complete && printImage.naturalWidth > 0) {
+                    resolve();
+                    return;
+                }
+
+                printImage.onload = resolve;
+                printImage.onerror = reject;
+
+            });
+
+            // Allow image to render before opening print preview
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            printButton.textContent = "PRINT / SAVE AS PDF";
+
+            printButton.disabled = false;
 
             window.print();
 
         } catch (error) {
+
             console.error("Print error:", error);
-            window.print();
+
+            printButton.textContent = "PRINT / SAVE AS PDF";
+            printButton.disabled = false;
+
+            alert(
+                "The map could not be captured for printing. " +
+                "Please check the browser console for details."
+            );
+
         }
 
     };
+
+
+    // Refresh map after returning from print preview
+    window.addEventListener("afterprint", function() {
+
+        view.resize();
+
+    });
 
 });
 
