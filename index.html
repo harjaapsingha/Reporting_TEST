@@ -174,24 +174,109 @@ body {
 
 </div>
 
+
 <script>
 
 const params = new URLSearchParams(window.location.search);
 
-// Retrieve property information from URL
+// ============================================
+// 1. PROPERTY INFORMATION
+// ============================================
+
 const pid = params.get("pid") || "Not supplied";
 const address = params.get("address") || "Awaiting property data";
-const cadType = params.get("cadType") || "Awaiting property data";
+const cadType = params.get("cadType") || "Not specified";
 
-// Display property information
 document.getElementById("pid").textContent = pid;
 document.getElementById("address").textContent = address;
 document.getElementById("cadType").textContent = cadType;
 
-// Display current report date
+
+// ============================================
+// 2. HISTORICAL LANDSLIDES
+// ============================================
+
+const landslideIDs = (params.get("landslideIDs") || "").split("|");
+const activityStates = (params.get("activityStates") || "").split("|");
+
+const landslideElement = document.getElementById("landslides");
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char];
+    });
+}
+
+if (!params.get("landslideIDs")) {
+
+    landslideElement.textContent =
+        "No historical landslide records found.";
+
+} else {
+
+    landslideElement.innerHTML = "";
+
+    let recordCount = 0;
+
+    for (let i = 0; i < landslideIDs.length; i++) {
+
+        if (!landslideIDs[i]) continue;
+
+        recordCount++;
+
+        const id = escapeHTML(landslideIDs[i]);
+        const activity = escapeHTML(activityStates[i] || "Not specified");
+
+        const record = document.createElement("div");
+
+        record.style.cssText = `
+            background:white;
+            border:1px solid #E5E0EA;
+            border-left:4px solid #8261A8;
+            padding:12px;
+            margin-top:10px;
+            border-radius:6px;
+        `;
+
+        record.innerHTML = `
+            <strong style="color:#493568;">
+                Landslide ID: ${id}
+            </strong>
+
+            <div style="
+                margin-top:6px;
+                font-size:12px;
+                color:#77717F;
+            ">
+                Activity State: ${activity}
+            </div>
+        `;
+
+        landslideElement.appendChild(record);
+    }
+
+    if (recordCount === 0) {
+        landslideElement.textContent =
+            "No historical landslide records found.";
+    }
+}
+
+
+// ============================================
+// 3. REPORT STATUS
+// ============================================
+
 console.log("Property report loaded:", pid);
+console.log("Landslide records:", landslideIDs);
 
 </script>
+
 
 </body>
 </html>
