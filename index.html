@@ -527,21 +527,41 @@ require([
     // INITIALISE
     // ========================================
 
-    view.when(async function() {
+view.when(async function() {
 
-        try {
-            await Promise.all([
-                localityLayer.load(),
-                hazardLayer.load(),
-                historicalLayer.load(),
-                cadastreLayer.load()
-            ]);
+    try {
+        await Promise.all([
+            localityLayer.load(),
+            hazardLayer.load(),
+            historicalLayer.load(),
+            cadastreLayer.load()
+        ]);
 
-            await findProperty();
+        await findProperty();
 
-        } catch (error) {
-            console.error("Map initialisation error:", error);
-        }
+        // Disable map popups
+        view.popupEnabled = false;
+
+        // Disable user navigation
+        view.on("mouse-wheel", function(event) {
+            event.stopPropagation();
+        });
+
+        view.on("drag", function(event) {
+            event.stopPropagation();
+        });
+
+        view.on("double-click", function(event) {
+            event.stopPropagation();
+        });
+
+        view.on("key-down", function(event) {
+            event.stopPropagation();
+        });
+
+    } catch (error) {
+        console.error("Map initialisation error:", error);
+    }
 
     });
 
