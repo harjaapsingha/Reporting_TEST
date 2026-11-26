@@ -431,13 +431,25 @@ require([
     });
 
     const view = new MapView({
-        container: "map",
-        map: map,
-        center: [147.33, -42.88],
-        zoom: 16,
-        constraints: {
-            snapToZoom: false
-        }
+    container: "map",
+    map: map,
+    center: [147.33, -42.88],
+    zoom: 15,
+
+    constraints: {
+        minZoom: 15,
+        maxZoom: 15,
+        snapToZoom: false
+    },
+
+    navigation: {
+        mouseWheelZoomEnabled: false,
+        browserTouchPanEnabled: false
+    },
+
+    ui: {
+        components: []
+    }
     });
 
 
