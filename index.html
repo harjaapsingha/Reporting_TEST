@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hobart Property Intelligence Report</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 30px 15px;
+    background: #F1EFF4;
+    font-family: Arial, sans-serif;
+    color: #292333;
+}
+
+.report {
+    max-width: 850px;
+    margin: auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 3px 20px #00000012;
+}
+
+.header {
+    background: #493568;
+    color: white;
+    padding: 28px;
+    border-radius: 8px;
+}
+
+.header h1 {
+    margin: 0 0 8px;
+    font-size: 25px;
+}
+
+.header p {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.section {
+    margin-top: 28px;
+    padding: 20px;
+    border: 1px solid #E5E0EA;
+    border-radius: 8px;
+}
+
+.section h2 {
+    margin: 0 0 15px;
+    font-size: 15px;
+    color: #493568;
+}
+
+.result {
+    background: #F5F2F8;
+    padding: 14px;
+    border-radius: 6px;
+    margin-top: 8px;
+    line-height: 1.6;
+}
+
+.label {
+    font-size: 11px;
+    color: #77717F;
+    margin-top: 12px;
+}
+
+.value {
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.button {
+    display: block;
+    margin: 25px auto;
+    padding: 14px 25px;
+    border: none;
+    border-radius: 6px;
+    background: #493568;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.footer {
+    margin-top: 35px;
+    padding-top: 15px;
+    border-top: 1px solid #E5E0EA;
+    color: #77717F;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .report {
+        box-shadow: none;
+        max-width: none;
+        padding: 20px;
+    }
+
+    .button {
+        display: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="report">
+
+    <div class="header">
+        <h1>PROPERTY INTELLIGENCE REPORT</h1>
+        <p>CITY OF HOBART | PROPERTY ASSESSMENT</p>
+    </div>
+
+    <div class="section">
+        <h2>01 — PROPERTY INFORMATION</h2>
+
+        <div class="label">PROPERTY PID</div>
+        <div class="value" id="pid">Loading...</div>
+
+        <div class="label">PROPERTY ADDRESS</div>
+        <div class="value" id="address">Awaiting property data</div>
+
+        <div class="label">CADASTRAL TYPE</div>
+        <div class="value" id="cadType">Awaiting property data</div>
+    </div>
+
+    <div class="section">
+        <h2>02 — COASTAL EROSION</h2>
+        <div class="result" id="erosion">
+            Awaiting hazard assessment.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>03 — HISTORICAL LANDSLIDES</h2>
+        <div class="result" id="landslides">
+            Awaiting landslide assessment.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>04 — PROPERTY LOCATION</h2>
+        <div class="result">
+            Property map will be added in the next stage.
+        </div>
+    </div>
+
+    <button class="button" onclick="window.print()">
+        PRINT / SAVE AS PDF
+    </button>
+
+    <div class="footer">
+        CITY OF HOBART | PROPERTY INTELLIGENCE<br>
+        This report is intended as an informational property assessment.
+        Refer to original datasets and relevant authorities for verification.
+    </div>
+
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+
+const pid = params.get("pid") || "Not supplied";
+
+document.getElementById("pid").textContent = pid;
+</script>
+
+</body>
+</html>
